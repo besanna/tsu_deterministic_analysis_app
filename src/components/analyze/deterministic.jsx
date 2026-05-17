@@ -19,6 +19,7 @@ const DEFAULT_ANALYSIS_THRESHOLDS = {
   intensity: 0,
   capacity: 0
 };
+const ANALYSIS_PROGRESS_TOTAL = 100;
 
 const createDefaultAnalysisConfig = (features = []) => ({
   mode: 'deterministic',
@@ -966,6 +967,7 @@ export default function DeterministicAnalysis() {
   const [frequencies, setFrequencies] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [rowLimit, setRowLimit] = useState(null);
+  const [analyzedRowCount, setAnalyzedRowCount] = useState(null);
   const [analysisConfig, setAnalysisConfig] = useState(null);
 
   // Загрузка данных из URL параметров
@@ -977,6 +979,7 @@ export default function DeterministicAnalysis() {
     const applyLoadedAnalysis = (data) => {
       const restoredCsvData = data.csvData || [];
       const restoredColumns = data.columns || Object.keys(restoredCsvData[0] || {});
+      const restoredAnalyzedRowCount = data.rowLimitUsed ?? data.recordCount ?? restoredCsvData.length ?? null;
 
       setCsvData(restoredCsvData);
       setColumns(restoredColumns);
@@ -986,7 +989,8 @@ export default function DeterministicAnalysis() {
       setIsAnalysisComplete(true);
       setWorkflowStep('results');
       setCurrentStep('frequencies');
-      setRowLimit(data.rowLimitUsed || restoredCsvData.length || null);
+      setRowLimit(restoredAnalyzedRowCount || restoredCsvData.length || null);
+      setAnalyzedRowCount(restoredAnalyzedRowCount || null);
       setError('');
     };
     
@@ -1068,6 +1072,7 @@ export default function DeterministicAnalysis() {
         setColumns(columnNames);
         setCsvData(data);
         setAnalysisConfig(null);
+        setAnalyzedRowCount(null);
         setWorkflowStep('upload');
         setCurrentStep('frequencies');
         setRowLimit(data.length);
@@ -1106,13 +1111,15 @@ export default function DeterministicAnalysis() {
     setIsAnalyzing(true);
     setAnalysisProgress(0);
     setAnalysisStep('Инициализация анализа...');
-    setAnalysisTotalSteps(100);
+    setAnalysisTotalSteps(ANALYSIS_PROGRESS_TOTAL);
+    setIsAnalysisComplete(false);
     setShowResults(false);
     setWorkflowStep('upload');
 
     try {
       const effectiveRows = rowLimit ? Math.max(1, Math.min(rowLimit, csvData.length)) : csvData.length;
       const dataForAnalysis = csvData.slice(0, effectiveRows);
+      setAnalyzedRowCount(dataForAnalysis.length);
       const filteredData = dataForAnalysis.map((row) => (
         selectedColumns.reduce((filteredRow, column) => ({
           ...filteredRow,
@@ -1144,11 +1151,13 @@ export default function DeterministicAnalysis() {
 
       // Step 5: Подготовка результатов
       setAnalysisStep('Подготовка результатов...');
-      setAnalysisProgress(100);
+      setAnalysisProgress(ANALYSIS_PROGRESS_TOTAL);
+      setAnalysisStep('Анализ завершен');
+      setAnalysisProgress(ANALYSIS_PROGRESS_TOTAL);
+      setIsAnalysisComplete(true);
       await new Promise(resolve => setTimeout(resolve, 100));
 
       setIsAnalyzing(false);
-      setIsAnalysisComplete(true);
       setShowResults(true);
       setWorkflowStep('results');
       setCurrentStep('frequencies');
@@ -1173,6 +1182,7 @@ export default function DeterministicAnalysis() {
     setIsAnalysisComplete(false);
     setFrequencies(null);
     setRowLimit(null);
+    setAnalyzedRowCount(null);
     setAnalysisConfig(null);
     setWorkflowStep('upload');
     setCurrentStep('frequencies');
@@ -1186,6 +1196,7 @@ export default function DeterministicAnalysis() {
     setShowResults(false);
     setIsAnalysisComplete(false);
     setFrequencies(null);
+    setAnalyzedRowCount(null);
     setWorkflowStep('upload');
     setCurrentStep('frequencies');
   }, []);
@@ -1194,15 +1205,16 @@ export default function DeterministicAnalysis() {
     if (!frequencies || !csvData.length) return;
 
     try {
+      const rowsUsed = analyzedRowCount ?? (rowLimit ? Math.min(rowLimit, csvData.length) : csvData.length);
       const analysisData = {
         csvData,
         columns,
         frequencies,
         analysisConfig: analysisConfig || createDefaultAnalysisConfig(columns),
         fileName: 'Анализ данных',
-        recordCount: csvData.length,
+        recordCount: rowsUsed,
         columnCount: columns.length,
-        rowLimitUsed: rowLimit ? Math.min(rowLimit, csvData.length) : csvData.length
+        rowLimitUsed: rowsUsed
       };
 
       await IndexedDB.saveAnalysis(analysisData);
@@ -1211,7 +1223,9 @@ export default function DeterministicAnalysis() {
       console.error('Ошибка при сохранении результатов:', error);
       alert('Ошибка при сохранении результатов');
     }
-  }, [analysisConfig, csvData, columns, frequencies, rowLimit]);
+  }, [analysisConfig, analyzedRowCount, csvData, columns, frequencies, rowLimit]);
+
+  const displayedAnalyzedRowCount = analyzedRowCount ?? (rowLimit ? Math.min(rowLimit, csvData.length) : csvData.length);
 
   return (
     <div className="relative min-h-screen overflow-hidden analysis-shell">
@@ -1278,7 +1292,7 @@ export default function DeterministicAnalysis() {
                   <p className="text-xs uppercase tracking-[0.2em] text-white/50">Сессия анализа</p>
                   <h2 className="text-2xl font-semibold text-white mt-1">Результаты анализа</h2>
                   <p className="text-white/70 mt-1">
-                    Проанализировано {csvData.length} записей • {columns.length} колонок
+                    Проанализировано {displayedAnalyzedRowCount} записей • {columns.length} колонок
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">

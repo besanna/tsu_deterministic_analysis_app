@@ -110,7 +110,18 @@ const DragDropUpload = ({ onFileUpload, isLoading }) => {
 
 // Analysis Progress Component
 const AnalysisProgress = ({ progress, currentStep, totalSteps, isComplete }) => {
-  const percentage = Math.round((progress / totalSteps) * 100);
+  const safeTotalSteps = Number.isFinite(Number(totalSteps)) && Number(totalSteps) > 0
+    ? Number(totalSteps)
+    : 100;
+  const numericProgress = Number.isFinite(Number(progress)) ? Number(progress) : 0;
+  const boundedProgress = Math.min(Math.max(numericProgress, 0), safeTotalSteps);
+  const percentage = isComplete
+    ? 100
+    : Math.round((boundedProgress / safeTotalSteps) * 100);
+  const displayProgress = isComplete ? safeTotalSteps : Math.round(boundedProgress);
+  const indicatorLeft = isComplete ? 100 : Math.min(percentage, 88);
+  const dotCount = Math.max(1, Math.min(Math.round(safeTotalSteps), 5));
+  const activeDotCount = Math.round((percentage / 100) * dotCount);
   
   return (
     <div className="flex flex-col items-center justify-center min-h-[500px] px-4">
@@ -143,20 +154,28 @@ const AnalysisProgress = ({ progress, currentStep, totalSteps, isComplete }) => 
             <div className="mb-8">
               <div className="flex justify-between text-sm font-semibold mb-3">
                 <span className="text-white/70">Прогресс</span>
-                <span className="text-cyan-200">{progress}/{totalSteps}</span>
+                <span className="text-cyan-200">{displayProgress}/{safeTotalSteps}</span>
               </div>
               
               <div className="relative">
                 <div className="w-full bg-white/10 rounded-full h-4 overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 rounded-full transition-all duration-700 ease-out relative overflow-hidden"
+                    className={`h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 rounded-full relative overflow-hidden ${
+                      isComplete ? '' : 'transition-all duration-700 ease-out'
+                    }`}
                     style={{ width: `${percentage}%` }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
                   </div>
                 </div>
                 
-                <div className="absolute -top-10 transition-all duration-700 ease-out" style={{ left: `${Math.min(percentage, 88)}%` }}>
+                <div
+                  className={`absolute -top-10 ${isComplete ? '' : 'transition-all duration-700 ease-out'}`}
+                  style={{
+                    left: `${indicatorLeft}%`,
+                    transform: isComplete ? 'translateX(-100%)' : undefined
+                  }}
+                >
                   <div className="bg-white text-slate-900 text-xs font-bold px-2 py-1 rounded-lg shadow">
                     {percentage}%
                   </div>
@@ -166,13 +185,13 @@ const AnalysisProgress = ({ progress, currentStep, totalSteps, isComplete }) => 
             
             {!isComplete && (
               <div className="flex justify-center space-x-2">
-                {[...Array(totalSteps)].map((_, i) => (
+                {[...Array(dotCount)].map((_, i) => (
                   <div 
                     key={i} 
                     className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                      i < progress 
+                      i < activeDotCount
                         ? 'bg-cyan-400 w-8' 
-                        : i === progress 
+                        : i === activeDotCount && activeDotCount < dotCount
                         ? 'bg-blue-400 w-6 animate-pulse' 
                         : 'bg-white/15'
                     }`}
