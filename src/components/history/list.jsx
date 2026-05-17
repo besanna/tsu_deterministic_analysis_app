@@ -1,9 +1,11 @@
 import clsx from "clsx";
 import moment from "moment";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Modal from "../modals/modal";
 import { ChartBarIcon, TableCellsIcon, DocumentTextIcon, TrashIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import IndexedDB from "../../api/IndexedDB";
+import { getDeterministicAnalysisRoute } from "./historyRoutes";
 
 // Компонент для отображения результатов детерминационного анализа
 const DeterministicAnalysisResults = ({ data, onDelete, onViewFull }) => {
@@ -68,13 +70,13 @@ const DeterministicAnalysisResults = ({ data, onDelete, onViewFull }) => {
                         Результаты детерминационного анализа
                     </h2>
                     <div className="flex space-x-3">
-                        {/* <button
+                        <button
                             onClick={onViewFull}
                             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center"
                         >
                             <ArrowTopRightOnSquareIcon className="w-4 h-4 mr-2" />
                             Открыть полностью
-                        </button> */}
+                        </button>
                         <button
                             onClick={onDelete}
                             className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center"
@@ -180,6 +182,7 @@ const DeterministicAnalysisResults = ({ data, onDelete, onViewFull }) => {
 };
 
 export default function List(props) {
+    const navigate = useNavigate();
     const [modalInfo, setModalInfo] = useState(undefined)    
 
     const handleDelete = async (item) => {
@@ -201,13 +204,10 @@ export default function List(props) {
     };
 
     const handleViewFull = (item) => {
-        if (item.type === 'deterministic_analysis') {
-            // Переходим на страницу анализа с загруженными данными
-            window.location.href = '/analyze?loadData=' + encodeURIComponent(JSON.stringify({
-                csvData: item.csvData,
-                columns: item.columns,
-                frequencies: item.frequencies
-            }));
+        const route = getDeterministicAnalysisRoute(item);
+
+        if (route) {
+            navigate(route);
         }
     };
 

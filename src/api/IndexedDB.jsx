@@ -46,6 +46,14 @@ const IndexedDB = {
         return [];
     },
 
+    async getItem(storeName, id) {
+        const db = await dbPromise;
+        if (db.objectStoreNames.contains(storeName)) {
+            return await db.get(storeName, id);
+        }
+        return undefined;
+    },
+
     async deleteItem(storeName, id) {
         const db = await dbPromise;
         if (db.objectStoreNames.contains(storeName)) {
@@ -66,6 +74,10 @@ const IndexedDB = {
 
     async deleteAnalysis(id) {
         return await this.deleteItem('analysis', id);
+    },
+
+    async getAnalysisById(id) {
+        return await this.getItem('analysis', id);
     }
 }
 

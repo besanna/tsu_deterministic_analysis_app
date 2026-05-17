@@ -11,7 +11,43 @@ import {
   validateCsvData
 } from '../helpers/deterministic-calculations';
 import FileUploadStep from './FileUploadStep';
+import AnalysisConfigForm from './AnalysisConfigForm';
+import InsightsPanel from './InsightsPanel';
 import IndexedDB from '../../api/IndexedDB';
+
+const DEFAULT_ANALYSIS_THRESHOLDS = {
+  intensity: 0,
+  capacity: 0
+};
+
+const createDefaultAnalysisConfig = (features = []) => ({
+  mode: 'deterministic',
+  features,
+  thresholds: DEFAULT_ANALYSIS_THRESHOLDS
+});
+
+const normalizeThreshold = (value, fallback = 0) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? Math.min(1, Math.max(0, numericValue)) : fallback;
+};
+
+const normalizeAnalysisConfig = (config, availableFeatures = []) => {
+  if (!config) {
+    return createDefaultAnalysisConfig(availableFeatures);
+  }
+
+  const sourceFeatures = Array.isArray(config.features) ? config.features : availableFeatures;
+  const filteredFeatures = sourceFeatures.filter((feature) => availableFeatures.includes(feature));
+
+  return {
+    mode: 'deterministic',
+    features: filteredFeatures,
+    thresholds: {
+      intensity: normalizeThreshold(config.thresholds?.intensity, DEFAULT_ANALYSIS_THRESHOLDS.intensity),
+      capacity: normalizeThreshold(config.thresholds?.capacity, DEFAULT_ANALYSIS_THRESHOLDS.capacity)
+    }
+  };
+};
 
 // Progress bar component for calculations
 const CalculationProgress = ({ progress, currentStep, totalSteps }) => {
@@ -925,31 +961,79 @@ export default function DeterministicAnalysis() {
   const [analysisTotalSteps, setAnalysisTotalSteps] = useState(0);
   const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
   const [error, setError] = useState('');
+  const [workflowStep, setWorkflowStep] = useState('upload');
   const [currentStep, setCurrentStep] = useState('frequencies');
   const [frequencies, setFrequencies] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [rowLimit, setRowLimit] = useState(null);
+  const [analysisConfig, setAnalysisConfig] = useState(null);
 
   // Загрузка данных из URL параметров
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const loadData = urlParams.get('loadData');
+    const analysisId = urlParams.get('id');
+
+    const applyLoadedAnalysis = (data) => {
+      const restoredCsvData = data.csvData || [];
+      const restoredColumns = data.columns || Object.keys(restoredCsvData[0] || {});
+
+      setCsvData(restoredCsvData);
+      setColumns(restoredColumns);
+      setFrequencies(data.frequencies);
+      setAnalysisConfig(normalizeAnalysisConfig(data.analysisConfig, restoredColumns));
+      setShowResults(true);
+      setIsAnalysisComplete(true);
+      setWorkflowStep('results');
+      setCurrentStep('frequencies');
+      setRowLimit(data.rowLimitUsed || restoredCsvData.length || null);
+      setError('');
+    };
     
     if (loadData) {
       try {
         const data = JSON.parse(decodeURIComponent(loadData));
-        setCsvData(data.csvData);
-        setColumns(data.columns);
-        setFrequencies(data.frequencies);
-        setShowResults(true);
-        setIsAnalysisComplete(true);
-        setRowLimit(data.csvData?.length || null);
+        applyLoadedAnalysis(data);
         
         // Очищаем URL параметры
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (error) {
         console.error('Ошибка при загрузке данных из URL:', error);
       }
+      return;
+    }
+
+    if (analysisId) {
+      const loadAnalysisById = async () => {
+        const numericId = Number(analysisId);
+
+        if (!Number.isInteger(numericId)) {
+          setError('Некорректный идентификатор сохраненного анализа');
+          setWorkflowStep('upload');
+          setShowResults(false);
+          return;
+        }
+
+        try {
+          const data = await IndexedDB.getAnalysisById(numericId);
+
+          if (!data || data.type !== 'deterministic_analysis') {
+            setError('Сохраненный детерминационный анализ не найден');
+            setWorkflowStep('upload');
+            setShowResults(false);
+            return;
+          }
+
+          applyLoadedAnalysis(data);
+        } catch (error) {
+          console.error('Ошибка при загрузке сохраненного анализа:', error);
+          setError('Не удалось загрузить сохраненный детерминационный анализ');
+          setWorkflowStep('upload');
+          setShowResults(false);
+        }
+      };
+
+      loadAnalysisById();
     }
   }, []);
 
@@ -983,6 +1067,9 @@ export default function DeterministicAnalysis() {
         const columnNames = Object.keys(data[0]);
         setColumns(columnNames);
         setCsvData(data);
+        setAnalysisConfig(null);
+        setWorkflowStep('upload');
+        setCurrentStep('frequencies');
         setRowLimit(data.length);
         setIsLoading(false);
       },
@@ -993,18 +1080,45 @@ export default function DeterministicAnalysis() {
     });
   }, []);
 
-  const handleAnalyze = useCallback(async () => {
+  const handleOpenConfig = useCallback(() => {
     if (!csvData.length || !columns.length) return;
 
+    setError('');
+    setShowResults(false);
+    setIsAnalysisComplete(false);
+    setFrequencies(null);
+    setWorkflowStep('config');
+  }, [csvData, columns]);
+
+  const handleAnalyze = useCallback(async (config) => {
+    if (!csvData.length || !columns.length) return;
+
+    const normalizedConfig = normalizeAnalysisConfig(config, columns);
+    const selectedColumns = columns.filter((column) => normalizedConfig.features.includes(column));
+
+    if (!selectedColumns.length) {
+      setError('Выберите хотя бы один признак для анализа');
+      setWorkflowStep('config');
+      return;
+    }
+
+    setAnalysisConfig(normalizedConfig);
     setIsAnalyzing(true);
     setAnalysisProgress(0);
     setAnalysisStep('Инициализация анализа...');
     setAnalysisTotalSteps(100);
     setShowResults(false);
+    setWorkflowStep('upload');
 
     try {
       const effectiveRows = rowLimit ? Math.max(1, Math.min(rowLimit, csvData.length)) : csvData.length;
       const dataForAnalysis = csvData.slice(0, effectiveRows);
+      const filteredData = dataForAnalysis.map((row) => (
+        selectedColumns.reduce((filteredRow, column) => ({
+          ...filteredRow,
+          [column]: row[column]
+        }), {})
+      ));
 
       // Step 1: Анализ уникальных значений
       setAnalysisStep('Анализ уникальных значений...');
@@ -1015,7 +1129,7 @@ export default function DeterministicAnalysis() {
       setAnalysisStep('Расчет условных частот...');
       setAnalysisProgress(30);
       
-      const frequencies = await calculateAllFrequencies(dataForAnalysis, columns);
+      const frequencies = await calculateAllFrequencies(filteredData, selectedColumns);
       setFrequencies(frequencies);
       
       // Step 3: Расчет интенсивности детерминации
@@ -1036,12 +1150,20 @@ export default function DeterministicAnalysis() {
       setIsAnalyzing(false);
       setIsAnalysisComplete(true);
       setShowResults(true);
+      setWorkflowStep('results');
+      setCurrentStep('frequencies');
     } catch (error) {
       console.error('Ошибка при анализе данных:', error);
       setError('Ошибка при анализе данных: ' + error.message);
       setIsAnalyzing(false);
+      setWorkflowStep('config');
     }
   }, [csvData, columns, rowLimit]);
+
+  const handleConfigSave = useCallback((config) => {
+    setAnalysisConfig(config);
+    handleAnalyze(config);
+  }, [handleAnalyze]);
 
   const handleClearData = useCallback(() => {
     setCsvData([]);
@@ -1051,13 +1173,21 @@ export default function DeterministicAnalysis() {
     setIsAnalysisComplete(false);
     setFrequencies(null);
     setRowLimit(null);
+    setAnalysisConfig(null);
+    setWorkflowStep('upload');
+    setCurrentStep('frequencies');
   }, []);
 
   const handleRemoveColumn = useCallback((columnName) => {
     setColumns((prev) => prev.filter((col) => col !== columnName));
+    setAnalysisConfig((prev) => (
+      prev ? { ...prev, features: prev.features.filter((feature) => feature !== columnName) } : prev
+    ));
     setShowResults(false);
     setIsAnalysisComplete(false);
     setFrequencies(null);
+    setWorkflowStep('upload');
+    setCurrentStep('frequencies');
   }, []);
 
   const handleSaveResults = useCallback(async () => {
@@ -1068,6 +1198,7 @@ export default function DeterministicAnalysis() {
         csvData,
         columns,
         frequencies,
+        analysisConfig: analysisConfig || createDefaultAnalysisConfig(columns),
         fileName: 'Анализ данных',
         recordCount: csvData.length,
         columnCount: columns.length,
@@ -1080,7 +1211,7 @@ export default function DeterministicAnalysis() {
       console.error('Ошибка при сохранении результатов:', error);
       alert('Ошибка при сохранении результатов');
     }
-  }, [csvData, columns, frequencies, rowLimit]);
+  }, [analysisConfig, csvData, columns, frequencies, rowLimit]);
 
   return (
     <div className="relative min-h-screen overflow-hidden analysis-shell">
@@ -1106,7 +1237,7 @@ export default function DeterministicAnalysis() {
         </div>
 
         {/* File Upload Step - only show if no results yet */}
-        {!showResults && (
+        {workflowStep === 'upload' && !showResults && (
           <FileUploadStep
             csvData={csvData}
             columns={columns}
@@ -1121,13 +1252,24 @@ export default function DeterministicAnalysis() {
             onRowLimitChange={setRowLimit}
             onRemoveColumn={handleRemoveColumn}
             onFileUpload={handleFileUpload}
-            onAnalyze={handleAnalyze}
+            onAnalyze={handleOpenConfig}
             onClearData={handleClearData}
           />
         )}
 
+        {workflowStep === 'config' && !showResults && !isAnalyzing && (
+          <div className="max-w-7xl mx-auto py-6 px-4">
+            <AnalysisConfigForm
+              availableFeatures={columns}
+              initialConfig={analysisConfig}
+              onBack={() => setWorkflowStep('upload')}
+              onSave={handleConfigSave}
+            />
+          </div>
+        )}
+
         {/* Results */}
-        {showResults && csvData.length > 0 && columns.length > 0 && (
+        {workflowStep === 'results' && showResults && csvData.length > 0 && columns.length > 0 && (
           <>
             {/* Header with new file button */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-[0_20px_60px_-25px_rgba(0,0,0,0.6)] mb-6">
@@ -1160,7 +1302,17 @@ export default function DeterministicAnalysis() {
             
             {/* Navigation buttons */}
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur mb-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <button
+                  onClick={() => setCurrentStep('insights')}
+                  className={`relative overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                    currentStep === 'insights'
+                      ? 'bg-[#0e1b1a] border border-white/30 text-white shadow-[0_10px_40px_-20px_rgba(52,211,153,0.8)]'
+                      : 'bg-[#0b1019]/60 text-white/70 border border-white/10 hover:text-white'
+                  }`}
+                >
+                  Ключевые выводы
+                </button>
                 <button
                   onClick={() => setCurrentStep('frequencies')}
                   className={`relative overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold transition ${
@@ -1205,6 +1357,9 @@ export default function DeterministicAnalysis() {
             </div>
 
             {/* Step content */}
+            {currentStep === 'insights' && frequencies && (
+              <InsightsPanel results={frequencies} config={analysisConfig || createDefaultAnalysisConfig(columns)} />
+            )}
             {currentStep === 'frequencies' && (
               <ConditionalFrequencyTable frequencies={frequencies} />
             )}
