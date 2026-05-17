@@ -1272,10 +1272,10 @@ export default function DeterministicAnalysis() {
         {workflowStep === 'results' && showResults && csvData.length > 0 && columns.length > 0 && (
           <>
             {/* Header with new file button */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-[0_20px_60px_-25px_rgba(0,0,0,0.6)] mb-6">
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur shadow-[0_20px_60px_-25px_rgba(0,0,0,0.6)] mb-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">Session</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-white/50">Сессия анализа</p>
                   <h2 className="text-2xl font-semibold text-white mt-1">Результаты анализа</h2>
                   <p className="text-white/70 mt-1">
                     Проанализировано {csvData.length} записей • {columns.length} колонок

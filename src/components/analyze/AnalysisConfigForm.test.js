@@ -43,8 +43,8 @@ describe('AnalysisConfigForm', () => {
       expect(screen.getByLabelText('Segment')).toBeChecked();
       expect(screen.getByLabelText('Outcome')).not.toBeChecked();
     });
-    expect(screen.getByLabelText('Threshold intensity')).toHaveValue(0.7);
-    expect(screen.getByLabelText('Threshold capacity')).toHaveValue(0.3);
+    expect(screen.getByLabelText('Порог интенсивности')).toHaveValue(0.7);
+    expect(screen.getByLabelText('Порог емкости')).toHaveValue(0.3);
   });
 
   it('disables save when a threshold is outside the [0, 1] range', () => {
@@ -55,13 +55,13 @@ describe('AnalysisConfigForm', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText(/Threshold intensity/i), {
+    fireEvent.change(screen.getByLabelText(/Порог интенсивности/i), {
       target: { value: '-0.01' }
     });
 
     expect(screen.getByRole('button', { name: /сохранить конфигурацию/i })).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText(/Threshold intensity/i), {
+    fireEvent.change(screen.getByLabelText(/Порог интенсивности/i), {
       target: { value: '1.01' }
     });
 
@@ -78,10 +78,10 @@ describe('AnalysisConfigForm', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText(/Threshold intensity/i), {
+    fireEvent.change(screen.getByLabelText(/Порог интенсивности/i), {
       target: { value: '0.8' }
     });
-    fireEvent.change(screen.getByLabelText(/Threshold capacity/i), {
+    fireEvent.change(screen.getByLabelText(/Порог емкости/i), {
       target: { value: '0.4' }
     });
     fireEvent.click(screen.getByRole('button', { name: /сохранить конфигурацию/i }));

@@ -11,31 +11,27 @@ export default function Main() {
 
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white overflow-hidden relative">
+        <div className="relative min-h-screen overflow-hidden analysis-shell text-white">
 
             
             {/* Grid overlay */}
-            <div className="absolute inset-0 opacity-5 z-0">
-                <div className="h-full w-full" style={{
-                    backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px)',
-                    backgroundSize: '40px 40px'
-                }}></div>
-            </div>
+            <div className="analysis-grid" />
+            <div className="grain" />
 
-            <div className="relative z-10 container mx-auto px-6 py-12">
+            <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
                 {/* Main Header */}
-                <div className="text-center mb-16">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl mb-6 shadow-2xl shadow-indigo-500/20">
-                        <CubeTransparentIcon className="w-10 h-10 text-white" />
+                <div className="mb-16 overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(130deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01)),radial-gradient(120%_110%_at_10%_20%,rgba(95,177,255,0.12),transparent_35%),radial-gradient(120%_110%_at_85%_0%,rgba(37,99,235,0.12),transparent_32%)] p-8 text-center shadow-[0_30px_120px_-60px_rgba(0,0,0,0.65)] md:p-12">
+                    <div className="mx-auto mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-300 to-blue-600 shadow-2xl shadow-blue-500/20">
+                        <CubeTransparentIcon className="w-10 h-10 text-slate-950" />
                     </div>
                     
                     <h1 className="text-5xl md:text-6xl font-bold mb-6">
-                        <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                        <span className="bg-gradient-to-r from-sky-200 via-blue-100 to-white bg-clip-text text-transparent">
                             Детерминационный анализ
                         </span>
                     </h1>
                     
-                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
                         Математический инструмент для анализа зависимостей в данных. 
                         Загрузите CSV или Excel файл и получите полный анализ условных частот, 
                         интенсивностей и ёмкостей детерминации.
@@ -44,8 +40,8 @@ export default function Main() {
                     {/* Quick Actions */}
                     <div className="flex flex-wrap gap-4 justify-center mt-10">
                         <button 
-                            onClick={() => navigate('/analyze')}
-                            className="group px-8 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-xl font-semibold transition-all duration-300 hover:scale-105 shadow-xl hover:shadow-indigo-500/30 flex items-center"
+                            onClick={() => navigate('/deterministic')}
+	                            className="group inline-flex items-center rounded-full bg-gradient-to-r from-sky-300 to-blue-500 px-8 py-4 font-semibold text-slate-950 shadow-xl shadow-blue-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-blue-500/30"
                         >
                             <BeakerIcon className="w-5 h-5 mr-2" />
                             Начать анализ
@@ -53,7 +49,7 @@ export default function Main() {
                         </button>
                         <button 
                             onClick={() => navigate('/history')}
-                            className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl font-semibold transition-all duration-300 hover:bg-white/20 flex items-center"
+	                            className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-8 py-4 font-semibold text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/30 hover:bg-white/10"
                         >
                             <ClockIcon className="w-5 h-5 mr-2" />
                             История анализов
@@ -108,7 +104,7 @@ export default function Main() {
                 </div>
 
                 {/* Process Flow */}
-                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 mb-16">
+	                <div className="bg-white/5 backdrop-blur-md rounded-3xl p-8 border border-white/10 mb-16 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.6)]">
                     <h2 className="text-2xl font-bold mb-8 text-center">Процесс анализа</h2>
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                         <ProcessStep 
@@ -145,12 +141,12 @@ export default function Main() {
 
                 {/* Technical Details */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-white/5 backdrop-blur-md rounded-xl p-6 border border-white/10">
+	                    <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.6)]">
                         <h3 className="text-xl font-semibold mb-4 flex items-center">
                             <CpuChipIcon className="w-6 h-6 mr-2 text-indigo-400" />
                             Технические возможности
                         </h3>
-                        <ul className="space-y-3 text-gray-300">
+	                        <ul className="space-y-3 text-white/70">
                             <li className="flex items-start">
                                 <CheckCircleIcon className="w-5 h-5 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
                                 <span>Обработка больших массивов данных (до 10,000 строк)</span>
@@ -170,12 +166,12 @@ export default function Main() {
                         </ul>
                     </div>
 
-                    <div className="bg-white/5 backdrop-blur-md rounded-xl p-6 border border-white/10">
+	                    <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-[0_20px_60px_-25px_rgba(0,0,0,0.6)]">
                         <h3 className="text-xl font-semibold mb-4 flex items-center">
                             <DocumentTextIcon className="w-6 h-6 mr-2 text-purple-400" />
                             Формат результатов
                         </h3>
-                        <ul className="space-y-3 text-gray-300">
+	                        <ul className="space-y-3 text-white/70">
                             <li className="flex items-start">
                                 <CheckCircleIcon className="w-5 h-5 mr-2 text-green-400 mt-0.5 flex-shrink-0" />
                                 <span>Интерактивные таблицы с сортировкой</span>
@@ -211,12 +207,12 @@ function FeatureCard({ icon, title, description, formula, color }) {
     };
 
     return (
-        <div className="group bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-6 hover:bg-white/10 transition-all duration-300 hover:scale-105 hover:border-white/20">
-            <div className={`inline-flex p-3 rounded-lg bg-gradient-to-r ${colorClasses[color]} text-white mb-4 group-hover:scale-110 transition-transform`}>
+        <div className="group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/25 hover:bg-white/10 shadow-[0_18px_60px_-35px_rgba(95,177,255,0.55)]">
+            <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-r ${colorClasses[color]} text-white mb-4 group-hover:scale-105 transition-transform`}>
                 {icon}
             </div>
             <h3 className="text-lg font-semibold mb-2">{title}</h3>
-            <p className="text-gray-400 text-sm leading-relaxed mb-3">{description}</p>
+            <p className="text-white/55 text-sm leading-relaxed mb-3">{description}</p>
             {/* <div className="text-xs font-mono text-blue-300 opacity-70">{formula}</div> */}
         </div>
     );
@@ -225,11 +221,11 @@ function FeatureCard({ icon, title, description, formula, color }) {
 function ProcessStep({ icon, title, subtitle }) {
     return (
         <div className="flex flex-col items-center text-center">
-            <div className="p-4 bg-white/10 rounded-xl mb-2 group-hover:scale-110 transition-transform">
+            <div className="p-4 bg-white/10 rounded-2xl mb-2 transition-transform">
                 {icon}
             </div>
             <div className="font-semibold">{title}</div>
-            <div className="text-sm text-gray-400">{subtitle}</div>
+            <div className="text-sm text-white/50">{subtitle}</div>
         </div>
     );
 }
@@ -237,7 +233,7 @@ function ProcessStep({ icon, title, subtitle }) {
 function ArrowRight() {
     return (
         <div className="hidden md:flex justify-center">
-            <ArrowRightIcon className="w-6 h-6 text-gray-500" />
+            <ArrowRightIcon className="w-6 h-6 text-white/35" />
         </div>
     );
 }

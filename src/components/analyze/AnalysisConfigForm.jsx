@@ -167,7 +167,7 @@ export default function AnalysisConfigForm({
             <AdjustmentsHorizontalIcon className="h-6 w-6 text-slate-950" />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-white/50">Configuration</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-white/50">Конфигурация</p>
             <h2 className="mt-1 text-2xl font-semibold text-white">Параметры анализа</h2>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function AnalysisConfigForm({
 
           <div className="mt-4 space-y-4">
             <label htmlFor="threshold-intensity" className="block">
-              <span className="text-sm font-medium text-white/80">Threshold intensity</span>
+              <span className="text-sm font-medium text-white/80">Порог интенсивности</span>
               <input
                 id="threshold-intensity"
                 type="number"
@@ -270,7 +270,7 @@ export default function AnalysisConfigForm({
             </label>
 
             <label htmlFor="threshold-capacity" className="block">
-              <span className="text-sm font-medium text-white/80">Threshold capacity</span>
+              <span className="text-sm font-medium text-white/80">Порог емкости</span>
               <input
                 id="threshold-capacity"
                 type="number"

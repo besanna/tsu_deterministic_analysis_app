@@ -12,6 +12,8 @@ export default function Modal(props) {
         },
         isOpen = false,
         maxWidth = undefined,
+        panelClassName = '',
+        panelStyle = {},
     } = props;
 
     return (
@@ -31,8 +33,8 @@ export default function Modal(props) {
             <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
                 <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
                     <DialogPanel
-                        style={{maxWidth: maxWidth ? maxWidth : null}}
-                        className={clsx(``, "no-scroll max-h-[calc(100dvh-48px)] overflow-hidden overflow-y-auto relative transform rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-fit sm:p-6 data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95")}
+                        style={{maxWidth: maxWidth ? maxWidth : null, ...panelStyle}}
+                        className={clsx(``, "no-scroll max-h-[calc(100dvh-48px)] overflow-hidden overflow-y-auto relative transform rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-fit sm:p-6 data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95", panelClassName)}
                     >
                         {canClose == false ? null :
                             <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
